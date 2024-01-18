@@ -1,8 +1,8 @@
 
 # Ptychography
-<img width="50" src="https://github.com/Ryota-Koda/Tech-Profile/blob/main/Ptychography/3D_image.png">
-![3D](https://github.com/Ryota-Koda/Tech-Profile/blob/main/Ptychography/3D_image.png "3D")  
-![2D](https://github.com/Ryota-Koda/Tech-Profile/blob/main/Ptychography/2D_image.png "2D")  
+<img width="400" src="https://github.com/Ryota-Koda/Tech-Profile/blob/main/Ptychography/3D_image.png">
+<img width="400" src="https://github.com/Ryota-Koda/Tech-Profile/blob/main/Ptychography/2D_image.png">
+
 
 ePIE(Extended Ptychographical Lerative Engine)とFBP法(Filtered Back Projection)を用いて3次元X線タイコグラフィを実行するプログラム  
 
