@@ -14,6 +14,7 @@ C言語とOpenGLの学習の一環として，カーナビプログラムの作�
 
 * カメラの視点移動  
 ![gif](https://github.com/Ryota-Koda/Tech-Profile/blob/main/Car%20Navigation/CarNavi_otherview.gif)
+<img width="400" src="https://github.com/Ryota-Koda/Tech-Profile/blob/main/Car%20Navigation/CarNavi_otherview.gif">
 
 * アイコンの移動方法  
 
