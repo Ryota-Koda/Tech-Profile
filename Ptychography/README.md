@@ -9,5 +9,8 @@ X線タイコグラフィとは，光学顕微鏡よりも高い空間分解能�
 X線タイコグラフィでは，試料にX線を照射することによって得られる回折光のデータから，コンピュータ上で位相回復計算と呼ばれるデータ処理を行い，試料像を再構成する．  
 
 本プログラムでは，位相回復計算の代表例であるePIEをPythonで実装し，回折光のデータセットから2次元の試料像を再構成している．  
-また，ePIEで得られた複数の2次元試料像から，FBP法を用いて3次元の試料像を生成した．
+また，ePIEで得られた複数の2次元試料像から，FBP法を用いて3次元の試料像を生成を行った
 
+## 参考文献
+
+Andrew M. Maiden, John M. Rodenburg, "An improved ptychographical phase retrieval algorithm for diffractive imaging," Ultramicroscopy, vol. 109, no. 10, Sep. 2009, pp. 1256-1262.
