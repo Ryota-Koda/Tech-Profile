@@ -628,7 +628,7 @@ int main(void){
     int wait_time; //目的地に着いた時の待ち時間
 
     //マップファイルの読み込み
-    crossing_number = map_read("map2.dat");
+    crossing_number = map_read("map.dat");
     if (crossing_number < 0) {
         fprintf(stderr, "couldn't read map file\n");
         exit(1);
