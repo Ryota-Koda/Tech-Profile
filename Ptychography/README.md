@@ -1,6 +1,6 @@
 
 # Ptychography
-
+<img width="50" src="https://github.com/Ryota-Koda/Tech-Profile/blob/main/Ptychography/3D_image.png">
 ![3D](https://github.com/Ryota-Koda/Tech-Profile/blob/main/Ptychography/3D_image.png "3D")  
 ![2D](https://github.com/Ryota-Koda/Tech-Profile/blob/main/Ptychography/2D_image.png "2D")  
 
