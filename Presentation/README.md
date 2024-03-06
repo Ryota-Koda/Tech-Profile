@@ -5,7 +5,7 @@
 
 「工学部生にビジネス的な視点を与える」をテーマに作成した工学部生向けの財務会計の講義試料です．
 
-<img width="300" src="https://github.com/Ryota-Koda/Tech-Profile/blob/main/Car%20Navigation/CarNavi_otherview.gif">
+<img width="300" src="https://github.com/Ryota-Koda/Tech-Profile/blob/main/Presentation/%E8%B2%A1%E5%8B%99%E8%AB%B8%E8%A1%A8%E8%AC%9B%E7%BE%A9_%E3%82%B9%E3%83%A9%E3%82%A4%E3%83%89%E4%BE%8B.png">
 
 
 ## Dream come True.pdf
