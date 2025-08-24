@@ -24,3 +24,7 @@ Google Cloud Consorl (GCP)を用いて，Gmailの分類と返信の作成を自�
  
 分類の判断基準や返信文の調整などは，gmail_vertex_classifier_with_reply_draft_read.pyにあるLLMへの命令文を変更することで調整可能
 メールの自動送信や，既読化の削除などは各自調整してください
+
+
+https://github.com/user-attachments/assets/69fba6f1-9db2-4b73-a071-7b87c5f9f5da
+
