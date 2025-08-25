@@ -1,6 +1,8 @@
 # Gmail Classification and Reply
 
-Google Cloud Consorl (GCP)を用いて，Gmailの分類と返信の作成を自動で行うプログラム
+Google Cloud Consorl (GCP)を用いて，Gmailの分類と返信の作成を自動で行うプログラム．
+注意：このプログラムでは，メール本文をクラウド上のLLM(Gemini) に投げて分類しています．機密情報の取り扱いに注意してください．
+　　　実運用を想定する場合は，GPT-ossやllamaなどのローカルで動作するLLMを用いることを推奨します．
 
 ## 本リポジトリの構成
 - HowtoUse
