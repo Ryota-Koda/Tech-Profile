@@ -25,8 +25,9 @@ Google Cloud Consorl (GCP)を用いて，Gmailの分類と返信の作成を自�
 * 重要度1のメールは自動で返信文を生成し，下書きに保存
   * 敬語を使い100-200字程度
  
-分類の判断基準や返信文の調整などは，gmail_vertex_classifier_with_reply_draft_read.pyにあるLLMへの命令文を変更することで調整可能
-メールの自動送信や，既読化の削除などは各自調整してください
+分類の判断基準や返信文の調整などは，gmail_vertex_classifier_with_reply_draft_read.pyにあるLLMへの命令文を変更することで調整可能です．　
+
+メールの自動送信や，既読化の削除などは各自調整してください．
 
 <img src="reply_example.png" alt="サンプル画像" width="700">
 
