@@ -12,7 +12,7 @@ from typing import Optional, List, Tuple
 from email.mime.text import MIMEText
 from email.utils import getaddresses
 
-from gmail_auth import get_gmail_service
+from gmail_auth import get_gmail_service  # Cloud Run用にTOKEN_PATHを読む実装（Secret推奨）
 
 from google import genai
 from google.genai import types
@@ -38,7 +38,7 @@ def redact_email(addr: str) -> str:
 
 PROJECT_ID = _required_env("GOOGLE_CLOUD_PROJECT")
 
-# 既定
+# 既定は asia-northeast1 を先頭に（あなたの環境で提供が確認できたため）
 LOCATION   = os.getenv("GEMINI_LOCATION", "us-central1")
 MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 
@@ -47,7 +47,7 @@ REPLY_SIGNATURE   = os.getenv("REPLY_SIGNATURE", "")
 AUTO_MARK_READ    = os.getenv("AUTO_MARK_READ", "1") == "1"
 LOG_MODEL_SELECTION = os.getenv("LOG_MODEL_SELECTION", "0") == "1"
 
-# 複数候補（カンマ区切り）。指定がなければ安全な既定値を使用
+# 複数候補（カンマ区切り）。指定がなければ安全な既定値を使用（*-001 は除外）
 REGION_CANDIDATES_ENV = os.getenv("GEMINI_LOCATION_CANDIDATES", "")
 MODEL_CANDIDATES_ENV  = os.getenv("GEMINI_MODEL_CANDIDATES", "")
 
@@ -60,7 +60,7 @@ def _parse_candidates(raw: str) -> List[str]:
             out.append(it)
     return out
 
-# 既定の順序: asia → us
+# 既定の順序: asia → us （あなたのログ実績に合わせる）
 DEFAULT_REGION_CANDIDATES = [LOCATION] + [r for r in ("us-central1", "asia-northeast1") if r != LOCATION]
 DEFAULT_MODEL_CANDIDATES  = [MODEL_NAME] + [m for m in (
     "gemini-1.5-flash",
@@ -77,7 +77,7 @@ def make_client(location: str):
     """指定ロケーションで genai クライアントを作る（ADCを使用）"""
     return genai.Client(vertexai=True, project=PROJECT_ID, location=location)
 
-# 起動時のデフォルトクライアント
+# 起動時のデフォルトクライアント（最初の候補で）
 client = make_client(REGION_CANDIDATES[0])
 
 
@@ -87,28 +87,124 @@ def jlog(severity: str, **kv):
     print(json.dumps({"severity": severity, **kv}, ensure_ascii=False), flush=True)
 
 
-# ========= Gemini プロンプト (ここで調整可能) =========
+# ========= Gemini プロンプト =========
 SYSTEM_PROMPT = textwrap.dedent("""\
-あなたはメール分類アシスタントです。入力されたメールが、次の4分類のうち最も適切な番号のみを JSON で返してください。
-出力は厳密に {"category": 1|2|3|4} のみ。説明や他の文字は出力しない。個人情報は出力に含めない。
+あなたはメール分類アシスタントです。入力されたメールが以下の分類リストからどれに該当するかを判断し，最も適切な番号のみを JSON で返してください。
+説明や他の文字を出力しないでください。
 
 必ず次の形式だけを返してください:
 {"category": 1|2|3|4}
 
-1. 非常に重要で、返信対応が必要なメール
-2. 返信対応の必要はないが、必ず読む必要があるメール
-3. イベントの開催など、目を通しておくべきメール
-4. 特に自分に関係ないイベント開催や広告のメール
+分類リスト
+1. 返信対応が必要なメール 
+  (例: 日程の相談、書類の送信、質問に対する回答、承認依頼)
+2. 返信対応の必要はないが、重要度が高く、必ず読む必要があるメール
+  (例: 社内ルールの改訂、重要度が高いニュース、セキュリティ通知、公式発表)
+3. 重要度が中程度で、目を通しておくべきメール
+  (例: イベントの案内、定期的なニュース，参考資料)
+4. 重要度が低く、読む必要がないメール
+  (例: 広告、不審な詐欺、アンケート、SNS通知)
+
+入力例:
+件名: "ミーティング日程のご相談"
+本文: "来週の空いている日時を教えてください。"
+出力:
+{"category": 1}
+
+入力例:
+件名: "セキュリティポリシー更新のお知らせ"
+本文: "本日よりパスワードルールが変更されます。"
+出力:
+{"category": 2}
+
+入力例:
+件名: "学内システム停止のご案内"
+本文: "今週末にサーバメンテナンスが行われます。利用できませんのでご注意ください。"
+出力:
+{"category": 2}
+
+入力例:
+件名: "研究セミナー開催のお知らせ"
+本文: "来月の学会での公開セミナーの案内です。ご参加は任意です。"
+出力:
+{"category": 3}
+
+入力例:
+件名: "月次ニュースレター"
+本文: "今月の研究トピックや最新情報をまとめました。"
+出力:
+{"category": 3}
+
+入力例:
+件名: "期間限定セールのご案内"
+本文: "本日限定! 家電が最大50%オフになります。"
+出力:
+{"category": 4}
+
 """)
 
 REPLY_SYSTEM_PROMPT = textwrap.dedent("""\
-あなたは丁寧で簡潔な日本語メールアシスタントです。
-入力されたメール本文と件名を読み取り、適切な返信本文のみを生成してください。
+あなたは優秀なメール作成アシスタントです。
+入力されたメール本文と件名を読み取り、以下のルールに従って適切な返信メールを生成してください。
+
 ・件名は生成しない（本文だけを返す）
-・一文ごとに改行、適宜段落分け
-・敬語を使い、100〜200文字程度
-・個人情報の創作や推測をしない
-・差出人の氏名/所属を勝手に名乗らない
+・メール送信者の名前は，佐藤 雅であり、東北大学 情報科学研究科の博士1年生
+・一文ごとに改行、適宜段落分けする
+・丁寧な敬語を用いて、ビジネスメールとして自然な表現にする
+・文字数は基本的に100〜200文字程度だが、内容に応じて多少前後しても良い
+・日本語のメールには日本語で返信文を作成し、日本語署名を付ける
+・英語のメールには英語で返信文を作成し、英語署名を付ける
+
+・メールの構成は以下の通りにすること
+  1.返信先の名前 
+    (件名や本文に相手の名前が含まれない場合は「お世話になっております」で始める） 
+  2.簡単な挨拶と自分を名乗る
+    (例: お世話になっております。○○大学の○○です。） 
+  3.メール本文 (相手の依頼や質問に対する回答)
+  4.締めの文章
+    (例: どうぞよろしくお願いいたします。） 
+  5.固定の署名（以下の署名ブロックを必ずそのまま出力する）
+
+署名 (日本語版)
+-----------------------------------------------------------------------
+東北大学大学院情報科学研究科 博士1年
+高橋研究室 (自然言語処理講座)
+佐藤 雅
+e-mail masashi.sato.t8@dc.tohoku.ac.jp
+-----------------------------------------------------------------------
+
+署名 (英語版)
+-----------------------------------------------------
+Masashi Sato
+Tohoku University
+e-mail masashi.sato.t8@dc.tohoku.ac.jp
+-----------------------------------------------------
+
+入力例:
+  件名: "ミーティング日程のご相談"
+  本文:
+  佐藤 雅 様
+  お世話になっております。
+  北海道大学の中辻 孝明です。
+  研究の進捗相談を行いたいのですが，来週の空いている日時を教えて頂けますか。
+
+出力例:
+  中辻 孝明様
+
+  お世話になっております。
+  東北大学大学院 情報科学研究科 博士1年の佐藤 雅です。
+
+  来週は、月曜日の午後と水曜日の午後4時以降が開いております。
+  それ以外でも調整可能ですので、ご希望があればお知らせいただけますと幸いです。
+
+  どうぞよろしくお願い致します。
+
+  -----------------------------------------------------------------------
+  東北大学大学院情報科学研究科 博士1年
+  高橋研究室 (自然言語処理講座)
+  佐藤 雅
+  e-mail masashi.sato.t8@dc.tohoku.ac.jp
+  -----------------------------------------------------------------------
 """)
 
 def append_signature(body: str) -> str:
@@ -212,7 +308,7 @@ def classify_email(text: str) -> int:
             temperature=0.0,
             max_tokens=16,
         )
-        jlog("INFO", step="classify_out", raw=(out or "")[:64])
+        jlog("INFO", step="classify_out", raw=(out or "")[:64])  # 生文字列の露出を最小化
 
         try:
             return int(json.loads(out)["category"])
@@ -440,6 +536,7 @@ def main():
 
                 _, body = get_msg_subject_and_body(service, msg_id)
 
+                # 公開版では原文の出力を抑制（個人情報・本文をログ/標準出力しない）
                 # print("\n------- Original -------")
                 # print("From:", from_hdr)
                 # print("Subject:", subj)
@@ -448,6 +545,7 @@ def main():
                 draft_text = generate_reply(subj, body or "")
                 draft_text = append_signature(draft_text).strip()
 
+                # 公開版ではAI出力の生文字列を標準出力しない
                 # print("------- AI Reply Draft -------")
                 # print(draft_text)
 
